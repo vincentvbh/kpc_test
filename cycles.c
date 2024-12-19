@@ -3,7 +3,6 @@
 // Available for 64-bit Intel/Apple Silicon, macOS/iOS, with root privileges
 // Adapted from https://gist.github.com/ibireme/173517c208c7dc333ba962c1f0d67d12
 //
-//
 // profile a function in current thread):
 // 1. Open directory '/usr/share/kpep/', find your CPU PMC database.
 //    M1 (Pro/Max/Ultra): /usr/share/kpep/a14.plist

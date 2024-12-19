@@ -1,7 +1,7 @@
 // =============================================================================
 // XNU kperf/kpc demo
 // Available for 64-bit Intel/Apple Silicon, macOS/iOS, with root privileges
-//
+// From https://gist.github.com/ibireme/173517c208c7dc333ba962c1f0d67d12
 //
 // Demo 1 (profile a function in current thread):
 // 1. Open directory '/usr/share/kpep/', find your CPU PMC database.
