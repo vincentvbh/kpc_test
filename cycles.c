@@ -1026,11 +1026,6 @@ void init_counters(void){
         return;
     }
 
-    // get counters before
-    if(get_counters_data(counters_0)){
-        return;
-    }
-
 }
 
 // static void profile_func(void) {
