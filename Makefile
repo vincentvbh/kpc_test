@@ -1,10 +1,10 @@
 
 CC ?= clang
 
-CFLAGS += -I.
+CFLAGS += -I. -Wall -O3
 
-CYCL_HEADERS =
-CYCL_SOURCES =
+CYCL_HEADERS = cycles.h
+CYCL_SOURCES = cycles.c
 
 all: test
 

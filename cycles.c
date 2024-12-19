@@ -60,6 +60,8 @@
 #include <sys/kdebug.h>     // for kdebug trace decode
 #include <mach/mach_time.h> // for mach_absolute_time()
 
+#include "cycles.h"
+
 typedef float       f32;
 typedef double      f64;
 typedef int8_t      i8;
@@ -829,12 +831,7 @@ u64 counters_1[KPC_MAX_COUNTERS] = { 0 };
 u64 counters_buff[KPC_MAX_COUNTERS] = { 0 };
 usize ev_count = 0;
 
-static void profile_func(void) {
-    for (u32 i = 0; i < 100000; i++) {
-        u32 r = arc4random();
-        if (r % 2) arc4random();
-    }
-}
+
 
 static
 int load_pmc_db(kpep_db **db){
@@ -947,7 +944,12 @@ int setup_counting(void){
     return 0;
 }
 
-static
+void stop_counting(void){
+    kpc_set_counting(0);
+    kpc_set_thread_counting(0);
+    kpc_force_all_ctrs_set(0);
+}
+
 int get_counters_data(uint64_t *counters){
     int ret;
     if ((ret = kpc_get_thread_counters(0, KPC_MAX_COUNTERS, counters))) {
@@ -957,7 +959,6 @@ int get_counters_data(uint64_t *counters){
     return 0;
 }
 
-static
 uint64_t get_cycle(void){
     int ret;
     if ((ret = kpc_get_thread_counters(0, KPC_MAX_COUNTERS, counters_buff))) {
@@ -967,14 +968,6 @@ uint64_t get_cycle(void){
     return counters_buff[0];
 }
 
-static
-void stop_counting(void){
-    kpc_set_counting(0);
-    kpc_set_thread_counting(0);
-    kpc_force_all_ctrs_set(0);
-}
-
-static
 void print_counters_data(const uint64_t *counters_t0, const uint64_t *counters_t1){
     printf("counters value:\n");
     for (usize i = 0; i < ev_count; i++) {
@@ -985,80 +978,92 @@ void print_counters_data(const uint64_t *counters_t0, const uint64_t *counters_t
     }
 }
 
-int main(int argc, const char * argv[]) {
-
-    uint64_t t0, t1;
+void init_counters(void){
 
     // load dylib
     if (!lib_init()) {
         printf("Error: %s\n", lib_err_msg);
-        return 1;
+        return;
     }
 
     // check permission
     int force_ctrs = 0;
     if (kpc_force_all_ctrs_get(&force_ctrs)) {
         printf("Permission denied, xnu/kpc requires root privileges.\n");
-        return 1;
+        return;
     }
 
     // load pmc db
     kpep_db *db = NULL;
     if(load_pmc_db(&db)){
-        return 1;
+        return;
     }
 
     // create a config
     kpep_config *cfg = NULL;
     if(create_config(&cfg, db)){
-        return 1;
+        return;
     }
 
     // create events
     ev_count = sizeof(profile_events) / sizeof(profile_events[0]);
     if(config_events(&cfg, db)){
-        return 1;
+        return;
     }
 
     // prepare buffer and config
     if(config_buffers(cfg)){
-        return 1;
+        return;
     }
 
     // set config to kernel
     if(setup_config()){
-        return 1;
+        return;
     }
 
     // start counting
     if(setup_counting()){
-        return 1;
+        return;
     }
 
     // get counters before
     if(get_counters_data(counters_0)){
-        return 1;
+        return;
     }
 
-    // code to be measured
-    t0 = get_cycle();
-    profile_func();
-    t1 = get_cycle();
-    printf("%llu\n", t1 - t0);
-
-    // get counters after
-    if(get_counters_data(counters_1)){
-        return 1;
-    }
-
-    // stop counting
-    stop_counting();
-
-    // result
-    print_counters_data(counters_0, counters_1);
-
-    // TODO: free memory
-    return 0;
 }
+
+// static void profile_func(void) {
+//     for (u32 i = 0; i < 100000; i++) {
+//         u32 r = arc4random();
+//         if (r % 2) arc4random();
+//     }
+// }
+
+// int main(int argc, const char * argv[]) {
+
+//     uint64_t t0, t1;
+
+//     init_counters();
+
+//     // code to be measured
+//     t0 = get_cycle();
+//     profile_func();
+//     t1 = get_cycle();
+//     printf("%llu\n", t1 - t0);
+
+//     // get counters after
+//     if(get_counters_data(counters_1)){
+//         return 1;
+//     }
+
+//     // stop counting
+//     stop_counting();
+
+//     // result
+//     print_counters_data(counters_0, counters_1);
+
+//     return 0;
+// }
 
 
